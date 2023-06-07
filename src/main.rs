@@ -12,6 +12,7 @@ pub struct Module<'a> {
     exports: wasm_encoder::ExportSection,
     data: wasm_encoder::DataSection,
     memory: wasm_encoder::MemorySection,
+    import_info: Vec<(String, u32)>,
     defs: Vec<Function<'a>>,
     global_defs: Vec<Global>,
     start: Option<FunctionIndex>,
@@ -104,19 +105,13 @@ impl<'a> Module<'a> {
             name.as_ref(),
             wasm_encoder::EntityType::Function(type_index),
         );
-        self.funcs.function(type_index);
-        let index = self.funcs.len() - 1;
-        self.defs.push(Function {
-            body: vec![],
-            name: func_name.unwrap_or(name.as_ref()).to_string(),
-            locals: vec![],
-            type_index,
-            index,
-            export: None,
-        });
-        self.func_names
-            .append(index, func_name.unwrap_or(name.as_ref()));
-        index
+        self.import_info.push((
+            func_name.unwrap_or(name.as_ref()).to_string(),
+            self.imports.len() - 1,
+        ));
+        // self.funcs.function(type_index);
+        // let index = self.funcs.len() - 1;
+        self.imports.len() - 1
     }
 
     pub fn start(&mut self, f: FunctionIndex) -> &mut Self {
@@ -136,8 +131,8 @@ impl<'a> Module<'a> {
         self.types.function(params.clone(), results.clone());
         let type_index = self.types.len() - 1;
         self.funcs.function(type_index);
-        let index = self.funcs.len() - 1;
-        self.func_names.append(index, name.as_ref());
+        let index = self.imports.len() + self.funcs.len() - 1;
+        // self.func_names.append(index, name.as_ref());
         let f = Function {
             body: vec![],
             name: name.as_ref().to_string(),
@@ -152,13 +147,19 @@ impl<'a> Module<'a> {
 
     pub fn finish(mut self) -> Vec<u8> {
         let mut module = wasm_encoder::Module::new();
+        for i in self.import_info {
+            self.func_names.append(i.1, &i.0);
+        }
+
         for def in self.defs {
             let mut f = wasm_encoder::Function::new_with_locals_types(def.locals);
+
             for instr in &def.body {
                 f.instruction(instr);
             }
             f.instruction(&Instr::End);
             self.code.function(&f);
+            self.func_names.append(def.index, &def.name);
 
             if let Some(name) = def.export {
                 self.exports
@@ -270,6 +271,7 @@ fn main() {
         .global("one", ValType::I32, false, &ConstExpr::i32_const(1))
         .index();
     module.import("aaa", "bbb", Some("bbb"), [], []);
+    module.import("aaa", "ccc", Some("ccc"), [], []);
 
     let add1 = module
         .func("add1", [ValType::I32], [ValType::I32], [])
