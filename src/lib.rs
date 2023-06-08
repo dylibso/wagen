@@ -2,6 +2,12 @@ pub mod link;
 
 pub use wasm_encoder::{BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType};
 
+#[cfg(feature = "extism")]
+pub use extism;
+
+#[cfg(feature = "wasmtime")]
+pub use wasmtime;
+
 #[derive(Clone, Default)]
 pub struct Module<'a> {
     types: wasm_encoder::TypeSection,
@@ -330,7 +336,7 @@ impl<'a> Function<'a> {
 
 #[cfg(feature = "extism")]
 impl<'a> Module<'a> {
-    pub fn extism_manifest(self) -> extism::Manifest {
+    pub fn into_extism_manifest(self) -> extism::Manifest {
         let data = self.finish();
         extism::Manifest::new([extism::manifest::Wasm::Data {
             data,
@@ -341,12 +347,29 @@ impl<'a> Module<'a> {
         }])
     }
 
-    pub fn extism_plugin<'b>(
+    pub fn into_extism_plugin<'b>(
         self,
         functions: impl IntoIterator<Item = extism::Function>,
         wasi: bool,
     ) -> anyhow::Result<extism::Plugin<'b>> {
-        let manifest = self.extism_manifest();
+        let manifest = self.into_extism_manifest();
         extism::Plugin::create_with_manifest(&manifest, functions, wasi)
+    }
+}
+
+#[cfg(feature = "wasmtime")]
+impl<'a> Module<'a> {
+    pub fn into_wasmtime_instance(
+        self,
+        config: Option<wasmtime::Config>,
+    ) -> anyhow::Result<(wasmtime::Store<()>, wasmtime::Instance)> {
+        let data = self.finish();
+        let config = config.unwrap_or_default();
+        let engine = wasmtime::Engine::new(&config)?;
+        let module = wasmtime::Module::new(&engine, data)?;
+        let linker = wasmtime::Linker::new(&engine);
+        let mut store = wasmtime::Store::new(&engine, ());
+        let instance = linker.instantiate(&mut store, &module)?;
+        Ok((store, instance))
     }
 }
