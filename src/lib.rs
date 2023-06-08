@@ -327,3 +327,26 @@ impl<'a> Function<'a> {
         self.index
     }
 }
+
+#[cfg(feature = "extism")]
+impl<'a> Module<'a> {
+    pub fn extism_manifest(self) -> extism::Manifest {
+        let data = self.finish();
+        extism::Manifest::new([extism::manifest::Wasm::Data {
+            data,
+            meta: extism::manifest::WasmMetadata {
+                name: Some("main".to_string()),
+                hash: None,
+            },
+        }])
+    }
+
+    pub fn extism_plugin<'b>(
+        self,
+        functions: impl IntoIterator<Item = extism::Function>,
+        wasi: bool,
+    ) -> anyhow::Result<extism::Plugin<'b>> {
+        let manifest = self.extism_manifest();
+        extism::Plugin::create_with_manifest(&manifest, functions, wasi)
+    }
+}

@@ -35,7 +35,7 @@ fn main() {
             "count_vowels",
             [],
             [ValType::I32],
-            [ValType::I64, ValType::I32],
+            [ValType::I64, ValType::I32, ValType::I64],
         )
         .with_builder(|b| {
             b.r#loop(BlockType::Empty, |b| {
@@ -57,9 +57,23 @@ fn main() {
                     Instr::BrIf(0),
                 ]);
             })
-            .push(Instr::LocalGet(1));
+            .push([
+                Instr::I64Const(8),
+                Instr::Call(extism.alloc),
+                Instr::LocalTee(2),
+                Instr::LocalGet(1),
+                Instr::I64ExtendI32U,
+                Instr::Call(extism.store_u64),
+                Instr::LocalGet(2),
+                Instr::I64Const(8),
+                Instr::Call(extism.output_set),
+                Instr::I32Const(0),
+            ]);
         })
         .export("count_vowels");
 
-    module.save("test.wasm").unwrap();
+    module.clone().save("test.wasm").unwrap();
+    let mut plugin = module.extism_plugin([], false).unwrap();
+    let data = plugin.call("count_vowels", "this is a test").unwrap();
+    println!("{}", i64::from_le_bytes(data.try_into().unwrap()));
 }
