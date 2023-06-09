@@ -38,16 +38,19 @@ fn main() {
             [ValType::I64, ValType::I32, ValType::I64],
         )
         .with_builder(|b| {
+            let index = 0;
+            let count = 1;
+            let pointer = 2;
             b.r#loop(BlockType::Empty, |b| {
                 b.push([
                     // Load current index
-                    Instr::LocalGet(0),
+                    Instr::LocalGet(index),
                     Instr::Call(extism.input_load_u8),
                     // Check if the result is a vowel and store it in `1`
                     Instr::Call(is_vowel),
-                    Instr::LocalGet(1),
+                    Instr::LocalGet(count),
                     Instr::I32Add,
-                    Instr::LocalSet(1),
+                    Instr::LocalSet(count),
                 ])
                 .local_incr(0, ValType::I64, true)
                 .push([
@@ -58,14 +61,14 @@ fn main() {
                 ]);
             })
             .push([
-                Instr::I64Const(8),
+                Instr::I64Const(std::mem::size_of::<u64>() as i64),
                 Instr::Call(extism.alloc),
-                Instr::LocalTee(2),
-                Instr::LocalGet(1),
+                Instr::LocalTee(pointer),
+                Instr::LocalGet(count),
                 Instr::I64ExtendI32U,
                 Instr::Call(extism.store_u64),
-                Instr::LocalGet(2),
-                Instr::I64Const(8),
+                Instr::LocalGet(pointer),
+                Instr::I64Const(std::mem::size_of::<u64>() as i64),
                 Instr::Call(extism.output_set),
                 Instr::I32Const(0),
             ]);

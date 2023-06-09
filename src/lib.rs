@@ -81,6 +81,33 @@ impl<'a> Builder<'a> {
         expr(self);
         self.push(Instr::End)
     }
+
+    pub fn if_then<F: Fn(&mut Self)>(
+        &mut self,
+        bt: BlockType,
+        cond: impl Expr<'a>,
+        expr: F,
+    ) -> &mut Self {
+        self.push(cond);
+        self.push(Instr::If(bt));
+        expr(self);
+        self.push(Instr::End)
+    }
+
+    pub fn if_then_else<F: Fn(&mut Self), G: Fn(&mut Self)>(
+        &mut self,
+        bt: BlockType,
+        cond: impl Expr<'a>,
+        expr: F,
+        else_: G,
+    ) -> &mut Self {
+        self.push(cond);
+        self.push(Instr::If(bt));
+        expr(self);
+        self.push(Instr::Else);
+        else_(self);
+        self.push(Instr::End)
+    }
 }
 
 #[derive(Clone)]
@@ -300,6 +327,16 @@ impl<'a> Module<'a> {
 
         // Finish
         module.finish()
+    }
+
+    pub fn data_segment(&mut self, offset: &ConstExpr, data: impl AsRef<[u8]>) -> &mut Self {
+        self.data.active(0, offset, data.as_ref().to_vec());
+        self
+    }
+
+    pub fn memory(&mut self, mt: MemoryType) -> &mut Self {
+        self.memory.memory(mt);
+        self
     }
 
     pub fn save(self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
