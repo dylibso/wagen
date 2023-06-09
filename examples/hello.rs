@@ -5,7 +5,7 @@ fn main() {
     let extism = module.link_extism();
 
     module.memory(MemoryType {
-        minimum: 10,
+        minimum: 1,
         maximum: None,
         memory64: false,
         shared: false,
@@ -58,6 +58,6 @@ fn main() {
     module.clone().save("hello.wasm").unwrap();
 
     let mut plugin = module.into_extism_plugin([], false).unwrap();
-    let data = plugin.call("hello", "").unwrap().to_vec();
+    let data = plugin.call("hello", []).unwrap().to_vec();
     println!("{}", String::from_utf8(data).unwrap());
 }

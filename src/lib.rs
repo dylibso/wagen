@@ -1,4 +1,9 @@
+mod builder;
+mod expr;
 pub mod link;
+
+pub use builder::Builder;
+pub use expr::Expr;
 
 pub use wasm_encoder::{BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType};
 
@@ -27,89 +32,6 @@ pub struct Module<'a> {
     imports: wasm_encoder::ImportSection,
 }
 
-#[derive(Default, Clone)]
-pub struct Builder<'a> {
-    pub instrs: Vec<Instr<'a>>,
-}
-
-impl<'a> Builder<'a> {
-    pub fn new(init: impl IntoIterator<Item = Instr<'a>>) -> Self {
-        Builder {
-            instrs: init.into_iter().collect(),
-        }
-    }
-
-    pub fn push(&mut self, x: impl Expr<'a>) -> &mut Self {
-        self.instrs.extend(x.expr().instrs);
-        self
-    }
-
-    pub fn local_incr(&mut self, index: u32, ty: ValType, tee: bool) -> &mut Self {
-        self.push(Instr::LocalGet(index));
-        match ty {
-            ValType::I64 => {
-                self.push([Instr::I64Const(1), Instr::I64Add]);
-            }
-            ValType::I32 => {
-                self.push([Instr::I32Const(1), Instr::I32Add]);
-            }
-            ValType::F64 => {
-                self.push([Instr::F64Const(1.0), Instr::F64Add]);
-            }
-            ValType::F32 => {
-                self.push([Instr::F32Const(1.0), Instr::F32Add]);
-            }
-            x => panic!("Invalid type in `local_incr`: {x:?}"),
-        }
-
-        if tee {
-            self.push(Instr::LocalTee(index));
-        } else {
-            self.push(Instr::LocalSet(index));
-        }
-        self
-    }
-
-    pub fn block<F: Fn(&mut Self)>(&mut self, bt: BlockType, expr: F) -> &mut Self {
-        self.push(Instr::Block(bt));
-        expr(self);
-        self.push(Instr::End)
-    }
-
-    pub fn r#loop<F: Fn(&mut Self)>(&mut self, bt: BlockType, expr: F) -> &mut Self {
-        self.push(Instr::Loop(bt));
-        expr(self);
-        self.push(Instr::End)
-    }
-
-    pub fn if_then<F: Fn(&mut Self)>(
-        &mut self,
-        bt: BlockType,
-        cond: impl Expr<'a>,
-        expr: F,
-    ) -> &mut Self {
-        self.push(cond);
-        self.push(Instr::If(bt));
-        expr(self);
-        self.push(Instr::End)
-    }
-
-    pub fn if_then_else<F: Fn(&mut Self), G: Fn(&mut Self)>(
-        &mut self,
-        bt: BlockType,
-        cond: impl Expr<'a>,
-        expr: F,
-        else_: G,
-    ) -> &mut Self {
-        self.push(cond);
-        self.push(Instr::If(bt));
-        expr(self);
-        self.push(Instr::Else);
-        else_(self);
-        self.push(Instr::End)
-    }
-}
-
 #[derive(Clone)]
 pub struct Function<'a> {
     pub name: String,
@@ -123,52 +45,6 @@ pub struct Function<'a> {
 pub type GlobalIndex = u32;
 pub type TypeIndex = u32;
 pub type FunctionIndex = u32;
-
-impl<'a> From<Vec<Instr<'a>>> for Builder<'a> {
-    fn from(instrs: Vec<Instr<'a>>) -> Self {
-        Builder { instrs }
-    }
-}
-
-pub trait Expr<'a> {
-    fn expr(self) -> Builder<'a>;
-}
-
-impl<'a, F: Fn() -> Builder<'a>> Expr<'a> for F {
-    fn expr(self) -> Builder<'a> {
-        self()
-    }
-}
-
-impl<'a> Expr<'a> for Vec<Instr<'a>> {
-    fn expr(self) -> Builder<'a> {
-        self.into()
-    }
-}
-
-impl<'a> Expr<'a> for &[Instr<'a>] {
-    fn expr(self) -> Builder<'a> {
-        self.to_vec().into()
-    }
-}
-
-impl<'a, const N: usize> Expr<'a> for [Instr<'a>; N] {
-    fn expr(self) -> Builder<'a> {
-        self.to_vec().into()
-    }
-}
-
-impl<'a> Expr<'a> for Instr<'a> {
-    fn expr(self) -> Builder<'a> {
-        Builder::new([self])
-    }
-}
-
-impl<'a> Expr<'a> for Builder<'a> {
-    fn expr(self) -> Builder<'a> {
-        self
-    }
-}
 
 #[derive(Clone)]
 pub struct Global {
