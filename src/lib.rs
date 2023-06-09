@@ -2,16 +2,13 @@ mod builder;
 mod expr;
 pub mod link;
 
+#[cfg(feature = "parser")]
+pub mod parser;
+
 pub use builder::Builder;
 pub use expr::Expr;
 
 pub use wasm_encoder::{BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType};
-
-#[cfg(feature = "extism")]
-pub use extism;
-
-#[cfg(feature = "wasmtime")]
-pub use wasmtime;
 
 #[derive(Clone, Default)]
 pub struct Module<'a> {
