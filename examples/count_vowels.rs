@@ -78,14 +78,13 @@ fn main() {
     module.clone().save("count_vowels.wasm").unwrap();
 
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let data = module
+    let data: i64 = module
         .into_extism_plugin([], false)
         .unwrap()
         .call(
             "count_vowels",
             args.first().map(|x| x.as_str()).unwrap_or("this is a test"),
         )
-        .unwrap()
-        .to_vec();
-    println!("{}", i64::from_le_bytes(data.try_into().unwrap()));
+        .unwrap();
+    println!("{}", data);
 }

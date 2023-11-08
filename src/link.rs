@@ -27,94 +27,111 @@ pub struct ExtismFunctions {
 impl<'a> Module<'a> {
     pub fn link_extism(&mut self) -> ExtismFunctions {
         let input_load_u8 = self.import(
-            "env",
-            "extism_input_load_u8",
+            "extism:host/env",
+            "input_load_u8",
             None,
             [ValType::I64],
             [ValType::I32],
         );
         let input_load_u64 = self.import(
-            "env",
-            "extism_input_load_u64",
+            "extism:host/env",
+            "input_load_u64",
             None,
             [ValType::I64],
             [ValType::I64],
         );
-        let input_length = self.import("env", "extism_input_length", None, [], [ValType::I64]);
-        let length = self.import("env", "extism_length", None, [ValType::I64], [ValType::I64]);
-        let alloc = self.import("env", "extism_alloc", None, [ValType::I64], [ValType::I64]);
-        let free = self.import("env", "extism_free", None, [ValType::I64], []);
+        let input_length = self.import("extism:host/env", "input_length", None, [], [ValType::I64]);
+        let length = self.import(
+            "extism:host/env",
+            "length",
+            None,
+            [ValType::I64],
+            [ValType::I64],
+        );
+        let alloc = self.import(
+            "extism:host/env",
+            "alloc",
+            None,
+            [ValType::I64],
+            [ValType::I64],
+        );
+        let free = self.import("extism:host/env", "free", None, [ValType::I64], []);
         let output_set = self.import(
-            "env",
-            "extism_output_set",
+            "extism:host/env",
+            "output_set",
             None,
             [ValType::I64, ValType::I64],
             [],
         );
-        let error_set = self.import("env", "extism_error_set", None, [ValType::I64], []);
+        let error_set = self.import("extism:host/env", "error_set", None, [ValType::I64], []);
         let config_get = self.import(
-            "env",
-            "extism_config_get",
+            "extism:host/env",
+            "config_get",
             None,
             [ValType::I64],
             [ValType::I64],
         );
         let var_get = self.import(
-            "env",
-            "extism_var_get",
+            "extism:host/env",
+            "var_get",
             None,
             [ValType::I64],
             [ValType::I64],
         );
         let var_set = self.import(
-            "env",
-            "extism_var_set",
+            "extism:host/env",
+            "var_set",
             None,
             [ValType::I64, ValType::I64],
             [],
         );
         let store_u8 = self.import(
-            "env",
-            "extism_store_u8",
+            "extism:host/env",
+            "store_u8",
             None,
             [ValType::I64, ValType::I32],
             [],
         );
         let load_u8 = self.import(
-            "env",
-            "extism_load_u8",
+            "extism:host/env",
+            "load_u8",
             None,
             [ValType::I64],
             [ValType::I32],
         );
         let store_u64 = self.import(
-            "env",
-            "extism_store_u64",
+            "extism:host/env",
+            "store_u64",
             None,
             [ValType::I64, ValType::I64],
             [],
         );
         let load_u64 = self.import(
-            "env",
-            "extism_load_u64",
+            "extism:host/env",
+            "load_u64",
             None,
             [ValType::I64],
             [ValType::I64],
         );
         let http_request = self.import(
-            "env",
-            "extism_http_request",
+            "extism:host/env",
+            "http_request",
             None,
             [ValType::I64, ValType::I64],
             [ValType::I64],
         );
-        let http_status_code =
-            self.import("env", "extism_http_status_code", None, [], [ValType::I32]);
+        let http_status_code = self.import(
+            "extism:host/env",
+            "http_status_code",
+            None,
+            [],
+            [ValType::I32],
+        );
 
-        let log_info = self.import("env", "extism_log_info", None, [ValType::I64], []);
-        let log_debug = self.import("env", "extism_log_info", None, [ValType::I64], []);
-        let log_warn = self.import("env", "extism_log_info", None, [ValType::I64], []);
-        let log_error = self.import("env", "extism_log_info", None, [ValType::I64], []);
+        let log_info = self.import("extism:host/env", "log_info", None, [ValType::I64], []);
+        let log_debug = self.import("extism:host/env", "log_info", None, [ValType::I64], []);
+        let log_warn = self.import("extism:host/env", "log_info", None, [ValType::I64], []);
+        let log_error = self.import("extism:host/env", "log_info", None, [ValType::I64], []);
 
         ExtismFunctions {
             input_load_u8,

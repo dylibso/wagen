@@ -1,5 +1,8 @@
 use crate::parser::types::*;
-use wasm_encoder::*;
+use wasm_encoder::{
+    BlockType, EntityType, GlobalType, HeapType, MemArg, MemoryType, RefType, StorageType,
+    TableType, TagKind, TagType, ValType,
+};
 
 pub trait Convert<T> {
     fn convert(self) -> T;
@@ -9,7 +12,7 @@ impl Convert<HeapType> for wasmparser::HeapType {
     fn convert(self) -> HeapType {
         use wasmparser::HeapType::*;
         match self {
-            Indexed(i) => HeapType::Indexed(i),
+            Concrete(i) => HeapType::Concrete(i),
             Func => HeapType::Func,
             Extern => HeapType::Extern,
             Any => HeapType::Any,
@@ -75,14 +78,14 @@ impl<X: Convert<T>, T> Convert<Vec<T>> for Vec<X> {
     }
 }
 
-impl Convert<Type> for wasmparser::Type {
-    fn convert(self) -> Type {
-        match self {
-            wasmparser::Type::Func(ft) => Type::Func(ft.convert()),
-            wasmparser::Type::Array(t) => Type::Array(t.element_type.convert(), t.mutable),
-        }
-    }
-}
+// impl Convert<Type> for wasmparser::Type {
+//     fn convert(self) -> Type {
+//         match self {
+//             wasmparser::CoreType::Func(ft) => Type::Func(ft.convert()),
+//             wasmparser::Type::Array(t) => Type::Array(t.element_type.convert(), t.mutable),
+//         }
+//     }
+// }
 
 impl Convert<EntityType> for wasmparser::TypeRef {
     fn convert(self) -> EntityType {

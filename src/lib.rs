@@ -248,22 +248,16 @@ impl<'a> Function<'a> {
 impl<'a> Module<'a> {
     pub fn into_extism_manifest(self) -> extism::Manifest {
         let data = self.finish();
-        extism::Manifest::new([extism::manifest::Wasm::Data {
-            data,
-            meta: extism::manifest::WasmMetadata {
-                name: Some("main".to_string()),
-                hash: None,
-            },
-        }])
+        extism::Manifest::new([extism::Wasm::data(data)])
     }
 
-    pub fn into_extism_plugin<'b>(
+    pub fn into_extism_plugin(
         self,
         functions: impl IntoIterator<Item = extism::Function>,
         wasi: bool,
-    ) -> anyhow::Result<extism::Plugin<'b>> {
+    ) -> anyhow::Result<extism::Plugin> {
         let manifest = self.into_extism_manifest();
-        extism::Plugin::create_with_manifest(&manifest, functions, wasi)
+        extism::Plugin::new(&manifest, functions, wasi)
     }
 }
 

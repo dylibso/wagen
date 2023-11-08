@@ -5,13 +5,15 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
-wasm-encoder = "0.29.0"
-extism = {version = "0.4.0", optional = true}
-wasmtime = {version = "8.0.0", optional = true}
-wasmparser = {version = "0.107.0", optional = true}
+wasm-encoder = "0.36.0"
+extism-manifest = {git = "https://github.com/extism/extism", optional = true}
+extism = {git = "https://github.com/extism/extism", optional = true}
+wasmtime = {version = "14.0.0", optional = true}
+wasmparser = {version = "0.116.0", optional = true}
 
 [features]
-default = ["extism", "wasmtime", "parser"]
+default = ["parser", "runtime"]
+runtime = ["extism", "wasmtime", "extism-manifest"]
 parser = ["wasmparser"]
 
 [[example]]

@@ -58,6 +58,6 @@ fn main() {
     module.clone().save("hello.wasm").unwrap();
 
     let mut plugin = module.into_extism_plugin([], false).unwrap();
-    let data = plugin.call("hello", []).unwrap().to_vec();
-    println!("{}", String::from_utf8(data).unwrap());
+    let data: String = plugin.call("hello", "").unwrap();
+    println!("{}", data);
 }

@@ -111,7 +111,7 @@ impl<'a> Convert<Instruction<'a>> for wasmparser::Operator<'a> {
                 Instruction::F64Const(f64::from_bits(value.bits()))
             }
             wasmparser::Operator::RefNull { hty } => Instruction::RefNull(match hty {
-                wasmparser::HeapType::Indexed(i) => HeapType::Indexed(i),
+                wasmparser::HeapType::Concrete(n) => HeapType::Concrete(n),
                 wasmparser::HeapType::Func => HeapType::Func,
                 wasmparser::HeapType::Extern => HeapType::Extern,
                 wasmparser::HeapType::Any => HeapType::Any,
@@ -255,7 +255,7 @@ impl<'a> Convert<Instruction<'a>> for wasmparser::Operator<'a> {
             wasmparser::Operator::I64Extend8S => Instruction::I64Extend8S,
             wasmparser::Operator::I64Extend16S => Instruction::I64Extend16S,
             wasmparser::Operator::I64Extend32S => Instruction::I64Extend32S,
-            wasmparser::Operator::I31New => Instruction::I31New,
+            wasmparser::Operator::RefI31 => Instruction::RefI31,
             wasmparser::Operator::I31GetS => Instruction::I31GetS,
             wasmparser::Operator::I31GetU => Instruction::I31GetU,
             wasmparser::Operator::I32TruncSatF32S => Instruction::I32TruncSatF32S,
