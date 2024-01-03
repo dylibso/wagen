@@ -2,9 +2,6 @@ mod builder;
 mod expr;
 pub mod link;
 
-#[cfg(feature = "parser")]
-pub mod parser;
-
 pub use builder::Builder;
 pub use expr::Expr;
 
