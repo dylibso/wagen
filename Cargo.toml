@@ -12,7 +12,7 @@ wasmtime = {version = "16.0.0", optional = true}
 wasmparser = {version = "0.118.0", optional = true}
 
 [features]
-default = ["runtime"]
+default = ["runtime", "wasmparser"]
 runtime = ["extism", "wasmtime", "extism-manifest"]
 
 [[example]]
