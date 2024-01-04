@@ -3,13 +3,13 @@ use wagen::*;
 struct Add1;
 
 impl<'a> Expr<'a> for Add1 {
-    fn expr(self) -> Builder<'a> {
-        Builder::new([
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push([
             Instr::LocalGet(0),
             Instr::I32Const(1),
             Instr::I32Add,
             Instr::Return,
-        ])
+        ]);
     }
 }
 

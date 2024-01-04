@@ -19,7 +19,12 @@ impl<'a> Builder<'a> {
     }
 
     pub fn push(&mut self, x: impl Expr<'a>) -> &mut Self {
-        self.instrs.extend(x.expr().instrs);
+        x.expr(self);
+        self
+    }
+
+    pub fn extend(&mut self, x: impl IntoIterator<Item = Instr<'a>>) -> &mut Self {
+        self.instrs.extend(x);
         self
     }
 
