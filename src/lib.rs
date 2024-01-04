@@ -119,13 +119,10 @@ impl<'a> Module<'a> {
             name.as_ref(),
             wasm_encoder::EntityType::Function(type_index),
         );
-        self.import_info.push((
-            func_name.unwrap_or(name.as_ref()).to_string(),
-            self.imports.len() - 1,
-        ));
-        // self.funcs.function(type_index);
-        // let index = self.funcs.len() - 1;
-        self.imports.len() - 1
+        let idx = self.imports.len() - 1;
+        self.import_info
+            .push((func_name.unwrap_or(name.as_ref()).to_string(), idx));
+        idx
     }
 
     pub fn start(&mut self, f: FunctionIndex) -> &mut Self {
