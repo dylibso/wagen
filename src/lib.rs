@@ -5,7 +5,9 @@ pub mod link;
 pub use builder::Builder;
 pub use expr::Expr;
 
-pub use wasm_encoder::{BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType};
+pub use wasm_encoder::{
+    self as encoder, BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType,
+};
 
 #[derive(Clone, Default)]
 pub struct Module<'a> {
