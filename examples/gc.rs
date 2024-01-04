@@ -1,14 +1,14 @@
 use wagen::*;
 
-struct Init;
-struct Sum;
+struct Init(TypeIndex);
+struct Sum(TypeIndex);
 
 impl<'a> Expr<'a> for Init {
     fn expr(self, builder: &mut Builder<'a>) {
         builder.push([
             Instr::LocalGet(0),
             Instr::LocalGet(1),
-            Instr::ArrayNewFixed(0, 2),
+            Instr::ArrayNewFixed(self.0, 2),
             Instr::Return,
         ]);
     }
@@ -22,11 +22,11 @@ impl<'a> Expr<'a> for Sum {
             Instr::LocalGet(0),
             Instr::RefAsNonNull,
             Instr::I32Const(0),
-            Instr::ArrayGet(0),
+            Instr::ArrayGet(self.0),
             Instr::LocalGet(0),
             Instr::RefAsNonNull,
             Instr::I32Const(1),
-            Instr::ArrayGet(0),
+            Instr::ArrayGet(self.0),
             Instr::I32Add,
             Instr::Return,
         ]);
@@ -35,18 +35,20 @@ impl<'a> Expr<'a> for Sum {
 
 fn main() -> anyhow::Result<()> {
     let mut module = Module::new();
-    module.types().array(&StorageType::Val(ValType::I32), true);
+    let idx = module
+        .types()
+        .add(|x| x.array(&StorageType::Val(ValType::I32), true));
     let _sum = module
         .func(
             "sum",
             [ValType::Ref(RefType {
                 nullable: false,
-                heap_type: HeapType::Concrete(0),
+                heap_type: HeapType::Concrete(idx),
             })],
             [ValType::I32],
             [ValType::I32],
         )
-        .push(Sum)
+        .push(Sum(idx))
         .export("sum")
         .index();
 
@@ -56,11 +58,11 @@ fn main() -> anyhow::Result<()> {
             [ValType::I32, ValType::I32],
             [ValType::Ref(RefType {
                 nullable: false,
-                heap_type: HeapType::Concrete(0),
+                heap_type: HeapType::Concrete(idx),
             })],
             [],
         )
-        .push(Init)
+        .push(Init(idx))
         .export("init");
 
     module.save("sum.wasm")?;

@@ -5,6 +5,7 @@ pub struct ExtismFunctions {
     pub input_load_u64: FunctionIndex,
     pub input_length: FunctionIndex,
     pub length: FunctionIndex,
+    pub length_unsafe: FunctionIndex,
     pub alloc: FunctionIndex,
     pub free: FunctionIndex,
     pub output_set: FunctionIndex,
@@ -42,6 +43,13 @@ impl<'a> Module<'a> {
         );
         let input_length = self.import("extism:host/env", "input_length", None, [], [ValType::I64]);
         let length = self.import(
+            "extism:host/env",
+            "length",
+            None,
+            [ValType::I64],
+            [ValType::I64],
+        );
+        let length_unsafe = self.import(
             "extism:host/env",
             "length",
             None,
@@ -138,6 +146,7 @@ impl<'a> Module<'a> {
             input_load_u64,
             input_length,
             length,
+            length_unsafe,
             alloc,
             free,
             output_set,

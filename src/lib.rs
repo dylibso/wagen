@@ -3,7 +3,6 @@ mod expr;
 pub mod link;
 
 pub use builder::Builder;
-use encoder::TypeSection;
 pub use expr::Expr;
 
 pub use wasm_encoder::{
@@ -30,6 +29,18 @@ pub struct Module<'a> {
     global_defs: Vec<Global>,
     start: Option<FunctionIndex>,
     imports: wasm_encoder::ImportSection,
+}
+
+pub struct Types<'a>(pub &'a mut wasm_encoder::TypeSection);
+
+impl<'a> Types<'a> {
+    pub fn add<F: FnOnce(&mut wasm_encoder::TypeSection) -> &mut wasm_encoder::TypeSection>(
+        &mut self,
+        f: F,
+    ) -> TypeIndex {
+        f(&mut self.0);
+        self.0.len() - 1
+    }
 }
 
 #[derive(Clone)]
@@ -131,11 +142,12 @@ impl<'a> Module<'a> {
     ) -> &mut Function<'a> {
         let params = params.into_iter().collect::<Vec<_>>();
         let results = results.into_iter().collect::<Vec<_>>();
-        self.types.function(params.clone(), results.clone());
-        let type_index = self.types.len() - 1;
+        let type_index = self
+            .types()
+            .add(|t| t.function(params.clone(), results.clone()));
         self.funcs.function(type_index);
         let index = self.imports.len() + self.funcs.len() - 1;
-        // self.func_names.append(index, name.as_ref());
+        self.func_names.append(index, name.as_ref());
         let f = Function {
             body: Builder::default(),
             name: name.as_ref().to_string(),
@@ -148,8 +160,8 @@ impl<'a> Module<'a> {
         self.defs.last_mut().unwrap()
     }
 
-    pub fn types(&mut self) -> &mut TypeSection {
-        &mut self.types
+    pub fn types<'b>(&'b mut self) -> Types<'b> {
+        Types(&mut self.types)
     }
 
     pub fn finish(mut self) -> Vec<u8> {
