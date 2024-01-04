@@ -3,11 +3,15 @@ mod expr;
 pub mod link;
 
 pub use builder::Builder;
+use encoder::TypeSection;
 pub use expr::Expr;
 
 pub use wasm_encoder::{
-    self as encoder, BlockType, ConstExpr, Instruction as Instr, MemArg, MemoryType, ValType,
+    self as encoder, BlockType, ConstExpr, HeapType, Instruction as Instr, MemArg, MemoryType,
+    RefType, StorageType, ValType,
 };
+
+pub use wasmparser as parser;
 
 #[derive(Clone, Default)]
 pub struct Module<'a> {
@@ -142,6 +146,10 @@ impl<'a> Module<'a> {
         };
         self.defs.push(f);
         self.defs.last_mut().unwrap()
+    }
+
+    pub fn types(&mut self) -> &mut TypeSection {
+        &mut self.types
     }
 
     pub fn finish(mut self) -> Vec<u8> {
