@@ -17,14 +17,10 @@ impl<'a> Expr<'a> for Init {
 impl<'a> Expr<'a> for Sum {
     fn expr(self, builder: &mut Builder<'a>) {
         builder.push([
-            Instr::I32Const(1),
-            Instr::LocalSet(1),
             Instr::LocalGet(0),
-            Instr::RefAsNonNull,
             Instr::I32Const(0),
             Instr::ArrayGet(self.0),
             Instr::LocalGet(0),
-            Instr::RefAsNonNull,
             Instr::I32Const(1),
             Instr::ArrayGet(self.0),
             Instr::I32Add,
@@ -65,6 +61,6 @@ fn main() -> anyhow::Result<()> {
         .push(Init(idx))
         .export("init");
 
-    module.save("sum.wasm")?;
+    module.save("gc.wasm")?;
     Ok(())
 }
