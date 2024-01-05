@@ -14,8 +14,8 @@ fn main() {
     let dataidx = 0x1;
     let s = "Hello, world!";
     let len = s.len();
+    module.data_segment(&ConstExpr::i32_const(dataidx), s);
     module
-        .data_segment(&ConstExpr::i32_const(dataidx), s)
         .func("hello", [], [ValType::I32], [ValType::I64])
         .with_builder(|b| {
             b.push([
