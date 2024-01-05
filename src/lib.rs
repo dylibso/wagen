@@ -6,8 +6,8 @@ pub use builder::Builder;
 pub use expr::Expr;
 
 pub use wasm_encoder::{
-    self as encoder, BlockType, ConstExpr, HeapType, Instruction as Instr, MemArg, MemoryType,
-    RefType, StorageType, ValType,
+    self as encoder, BlockType, ConstExpr, FieldType, HeapType, Instruction as Instr, MemArg,
+    MemoryType, RefType, StorageType, ValType,
 };
 
 pub use wasmparser as parser;
@@ -56,6 +56,8 @@ pub struct Function<'a> {
 pub type GlobalIndex = u32;
 pub type TypeIndex = u32;
 pub type FunctionIndex = u32;
+pub type DataSegmentIndex = u32;
+pub type MemoryIndex = u32;
 
 #[derive(Clone)]
 pub struct Global {
@@ -218,14 +220,14 @@ impl<'a> Module<'a> {
         module.finish()
     }
 
-    pub fn data_segment(&mut self, offset: &ConstExpr, data: impl AsRef<[u8]>) -> &mut Self {
+    pub fn data_segment(&mut self, offset: &ConstExpr, data: impl AsRef<[u8]>) -> DataSegmentIndex {
         self.data.active(0, offset, data.as_ref().to_vec());
-        self
+        self.data.len() - 1
     }
 
-    pub fn memory(&mut self, mt: MemoryType) -> &mut Self {
+    pub fn memory(&mut self, mt: MemoryType) -> MemoryIndex {
         self.memory.memory(mt);
-        self
+        self.memory.len() - 1
     }
 
     pub fn save(self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {

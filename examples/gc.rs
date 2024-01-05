@@ -8,7 +8,7 @@ impl<'a> Expr<'a> for Init {
         builder.push([
             Instr::LocalGet(0),
             Instr::LocalGet(1),
-            Instr::ArrayNewFixed(self.0, 2),
+            Instr::StructNew(self.0),
             Instr::Return,
         ]);
     }
@@ -18,11 +18,9 @@ impl<'a> Expr<'a> for Sum {
     fn expr(self, builder: &mut Builder<'a>) {
         builder.push([
             Instr::LocalGet(0),
-            Instr::I32Const(0),
-            Instr::ArrayGet(self.0),
+            Instr::StructGet(self.0, 0),
             Instr::LocalGet(0),
-            Instr::I32Const(1),
-            Instr::ArrayGet(self.0),
+            Instr::StructGet(self.0, 1),
             Instr::I32Add,
             Instr::Return,
         ]);
@@ -31,33 +29,23 @@ impl<'a> Expr<'a> for Sum {
 
 fn main() -> anyhow::Result<()> {
     let mut module = Module::new();
-    let idx = module
-        .types()
-        .add(|x| x.array(&StorageType::Val(ValType::I32), true));
+    let field = FieldType {
+        element_type: StorageType::Val(ValType::I32),
+        mutable: true,
+    };
+    let idx = module.types().add(|x| x.struct_([field, field]));
+    let t = ValType::Ref(RefType {
+        nullable: false,
+        heap_type: HeapType::Concrete(idx),
+    });
     let _sum = module
-        .func(
-            "sum",
-            [ValType::Ref(RefType {
-                nullable: false,
-                heap_type: HeapType::Concrete(idx),
-            })],
-            [ValType::I32],
-            [],
-        )
+        .func("sum", [t], [ValType::I32], [])
         .push(Sum(idx))
         .export("sum")
         .index();
 
     module
-        .func(
-            "init",
-            [ValType::I32, ValType::I32],
-            [ValType::Ref(RefType {
-                nullable: false,
-                heap_type: HeapType::Concrete(idx),
-            })],
-            [],
-        )
+        .func("init", [ValType::I32, ValType::I32], [t], [])
         .push(Init(idx))
         .export("init");
 
