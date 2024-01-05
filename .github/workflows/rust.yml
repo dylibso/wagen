@@ -20,5 +20,5 @@ jobs:
       run: cargo build --verbose --features extism,wasmtime
     - name: Build examples
       run: cargo build --examples --features extism,wasmtime
-    - run: cargo run --example add1 --features extism,wasmtime
+    - run: cargo run --example add1 --features extism,wasmtime 10
     - run: cargo run --example count_vowels --features extism,wasmtime
