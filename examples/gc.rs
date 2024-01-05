@@ -42,7 +42,7 @@ fn main() -> anyhow::Result<()> {
                 heap_type: HeapType::Concrete(idx),
             })],
             [ValType::I32],
-            [ValType::I32],
+            [],
         )
         .push(Sum(idx))
         .export("sum")
