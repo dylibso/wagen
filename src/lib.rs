@@ -146,7 +146,6 @@ impl<'a> Module<'a> {
             .add(|t| t.function(params.clone(), results.clone()));
         self.funcs.function(type_index);
         let index = self.imports.len() + self.funcs.len() - 1;
-        self.func_names.append(index, name.as_ref());
         let f = Function {
             body: Builder::default(),
             name: name.as_ref().to_string(),
