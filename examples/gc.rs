@@ -2,6 +2,7 @@ use wagen::*;
 
 struct Init(TypeIndex);
 struct Sum(TypeIndex);
+struct Add(TypeIndex);
 
 impl<'a> Expr<'a> for Init {
     fn expr(self, builder: &mut Builder<'a>) {
@@ -27,6 +28,30 @@ impl<'a> Expr<'a> for Sum {
     }
 }
 
+impl<'a> Expr<'a> for Add {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push([
+            // Set a field
+            Instr::LocalGet(0),
+            Instr::LocalGet(0),
+            Instr::StructGet(self.0, 0),
+            Instr::LocalGet(1),
+            Instr::StructGet(self.0, 0),
+            Instr::I32Add,
+            Instr::StructSet(self.0, 0),
+            // Set b field
+            Instr::LocalGet(0),
+            Instr::LocalGet(0),
+            Instr::StructGet(self.0, 1),
+            Instr::LocalGet(1),
+            Instr::StructGet(self.0, 1),
+            Instr::I32Add,
+            Instr::StructSet(self.0, 1),
+            Instr::Return,
+        ]);
+    }
+}
+
 fn main() -> anyhow::Result<()> {
     let mut module = Module::new();
     let field = FieldType {
@@ -38,7 +63,13 @@ fn main() -> anyhow::Result<()> {
         nullable: false,
         heap_type: HeapType::Concrete(idx),
     });
-    let _sum = module
+
+    module
+        .func("add", [t, t], [], [])
+        .push(Add(idx))
+        .export("add");
+
+    module
         .func("sum", [t], [ValType::I32], [])
         .push(Sum(idx))
         .export("sum")

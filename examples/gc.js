@@ -9,4 +9,5 @@ const m = new WebAssembly.Module(file);
 const instance = new WebAssembly.Instance(m, {});
 
 const arr = instance.exports.init(a, b);
+instance.exports.add(arr, arr);
 console.log(instance.exports.sum(arr));
