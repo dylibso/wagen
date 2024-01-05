@@ -51,7 +51,7 @@ impl<'a> Module<'a> {
         );
         let length_unsafe = self.import(
             "extism:host/env",
-            "length",
+            "length_unsafe",
             None,
             [ValType::I64],
             [ValType::I64],

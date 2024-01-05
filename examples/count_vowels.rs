@@ -10,15 +10,14 @@ fn check_vowel<'a>(ch: char) -> Builder<'a> {
         .to_owned()
 }
 
-fn is_vowel<'a>() -> Builder<'a> {
-    Builder::default()
+fn is_vowel<'a>(builder: &mut Builder<'a>) {
+    builder
         .push(check_vowel('a'))
         .push(check_vowel('e'))
         .push(check_vowel('i'))
         .push(check_vowel('o'))
         .push(check_vowel('u'))
-        .push([Instr::I32Or, Instr::I32Or, Instr::I32Or, Instr::I32Or])
-        .to_owned()
+        .push([Instr::I32Or, Instr::I32Or, Instr::I32Or, Instr::I32Or]);
 }
 
 fn main() {

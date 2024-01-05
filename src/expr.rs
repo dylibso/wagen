@@ -4,9 +4,9 @@ pub trait Expr<'a> {
     fn expr(self, builder: &mut Builder<'a>);
 }
 
-impl<'a, F: Fn() -> Builder<'a>> Expr<'a> for F {
+impl<'a, F: Fn(&mut Builder<'a>)> Expr<'a> for F {
     fn expr(self, builder: &mut Builder<'a>) {
-        builder.extend(self().instrs);
+        self(builder)
     }
 }
 
@@ -30,7 +30,7 @@ impl<'a, const N: usize> Expr<'a> for [Instr<'a>; N] {
 
 impl<'a> Expr<'a> for Instr<'a> {
     fn expr(self, builder: &mut Builder<'a>) {
-        builder.push(self);
+        builder.push([self]);
     }
 }
 
