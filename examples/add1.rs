@@ -15,17 +15,18 @@ impl<'a> Expr<'a> for Add1 {
 
 fn main() -> anyhow::Result<()> {
     let mut module = Module::new();
-
     let add1 = module
         .func("add1", [ValType::I32], [ValType::I32], [])
         .push(Add1)
         .export("add1")
         .index();
 
+    let mut params = Params::new();
+    let a = params.add("a", ValType::I32);
     module
-        .func("add2", [ValType::I32], [ValType::I32], [])
+        .func("add2", params, [ValType::I32], [])
         .push([
-            Instr::LocalGet(0),
+            Instr::LocalGet(a.into()),
             Instr::Call(add1),
             Instr::Call(add1),
             Instr::Return,

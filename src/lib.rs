@@ -65,6 +65,110 @@ pub struct Global {
     export: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+pub struct Local(pub u32);
+
+impl Local {
+    pub fn index(&self) -> u32 {
+        self.0
+    }
+}
+
+impl From<Local> for u32 {
+    fn from(value: Local) -> Self {
+        value.0
+    }
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct Locals {
+    next: u32,
+    map: std::collections::BTreeMap<u32, (String, ValType)>,
+}
+
+impl<T: IntoIterator<Item = ValType>> From<T> for Locals {
+    fn from(value: T) -> Self {
+        let mut dest = Locals::new();
+        for x in value.into_iter() {
+            dest.add("", x);
+        }
+        dest
+    }
+}
+
+impl Locals {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, name: impl Into<String>, ty: ValType) -> Local {
+        let n = self.next;
+        self.map.insert(n, (name.into(), ty));
+        self.next += 1;
+        Local(n)
+    }
+
+    pub fn name(&self, local: Local) -> Option<&str> {
+        self.map.get(&local.0).map(|x| x.0.as_str())
+    }
+
+    pub fn ty(&self, local: Local) -> Option<ValType> {
+        self.map.get(&local.0).map(|x| x.1)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
+pub struct Param(pub u32);
+
+impl Param {
+    pub fn index(&self) -> u32 {
+        self.0
+    }
+}
+
+impl From<Param> for u32 {
+    fn from(value: Param) -> Self {
+        value.0
+    }
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct Params {
+    next: u32,
+    map: std::collections::BTreeMap<u32, (String, ValType)>,
+}
+
+impl<T: IntoIterator<Item = ValType>> From<T> for Params {
+    fn from(value: T) -> Self {
+        let mut dest = Params::new();
+        for x in value.into_iter() {
+            dest.add("", x);
+        }
+        dest
+    }
+}
+
+impl Params {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn add(&mut self, name: impl Into<String>, ty: ValType) -> Local {
+        let n = self.next;
+        self.map.insert(n, (name.into(), ty));
+        self.next += 1;
+        Local(n)
+    }
+
+    pub fn name(&self, local: Local) -> Option<&str> {
+        self.map.get(&local.0).map(|x| x.0.as_str())
+    }
+
+    pub fn ty(&self, local: Local) -> Option<ValType> {
+        self.map.get(&local.0).map(|x| x.1)
+    }
+}
+
 impl Global {
     pub fn export(&mut self, name: impl Into<String>) -> &mut Self {
         self.export = Some(name.into());
@@ -135,11 +239,16 @@ impl<'a> Module<'a> {
     pub fn func(
         &mut self,
         name: impl AsRef<str>,
-        params: impl IntoIterator<Item = ValType>,
+        params: impl Into<Params>,
         results: impl IntoIterator<Item = ValType>,
-        locals: impl IntoIterator<Item = ValType>,
+        locals: impl Into<Locals>,
     ) -> &mut Function<'a> {
-        let params = params.into_iter().collect::<Vec<_>>();
+        let params = params
+            .into()
+            .map
+            .into_values()
+            .map(|x| x.1)
+            .collect::<Vec<_>>();
         let results = results.into_iter().collect::<Vec<_>>();
         let type_index = self
             .types()
@@ -149,7 +258,7 @@ impl<'a> Module<'a> {
         let f = Function {
             body: Builder::default(),
             name: name.as_ref().to_string(),
-            locals: locals.into_iter().collect(),
+            locals: locals.into().map.into_values().map(|x| x.1).collect(),
             type_index,
             index,
             export: None,
