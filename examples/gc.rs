@@ -58,7 +58,7 @@ fn main() -> anyhow::Result<()> {
         element_type: StorageType::Val(ValType::I32),
         mutable: true,
     };
-    let idx = module.types().add(|x| x.struct_([field, field]));
+    let idx = module.types().push(|x| x.struct_([field, field]));
     let t = ValType::Ref(RefType {
         nullable: false,
         heap_type: HeapType::Concrete(idx),
