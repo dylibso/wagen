@@ -1,9 +1,13 @@
 mod builder;
 mod expr;
+mod function;
 pub mod link;
+mod type_list;
 
 pub use builder::Builder;
 pub use expr::Expr;
+pub use function::Function;
+pub use type_list::{Local, Param, TypeList};
 
 pub use wasm_encoder::{
     self as encoder, BlockType, ConstExpr, FieldType, HeapType, Instruction as Instr, MemArg,
@@ -11,6 +15,12 @@ pub use wasm_encoder::{
 };
 
 pub use wasmparser as parser;
+
+pub type GlobalIndex = u32;
+pub type TypeIndex = u32;
+pub type FunctionIndex = u32;
+pub type DataSegmentIndex = u32;
+pub type MemoryIndex = u32;
 
 #[derive(Clone, Default)]
 pub struct Module<'a> {
@@ -34,7 +44,7 @@ pub struct Module<'a> {
 pub struct Types<'a>(pub &'a mut wasm_encoder::TypeSection);
 
 impl<'a> Types<'a> {
-    pub fn add<F: FnOnce(&mut wasm_encoder::TypeSection) -> &mut wasm_encoder::TypeSection>(
+    pub fn push<F: FnOnce(&mut wasm_encoder::TypeSection) -> &mut wasm_encoder::TypeSection>(
         &mut self,
         f: F,
     ) -> TypeIndex {
@@ -44,111 +54,9 @@ impl<'a> Types<'a> {
 }
 
 #[derive(Clone)]
-pub struct Function<'a> {
-    pub name: String,
-    pub body: Builder<'a>,
-    pub locals: Vec<ValType>,
-    pub type_index: TypeIndex,
-    pub index: FunctionIndex,
-    pub export: Option<String>,
-}
-
-pub type GlobalIndex = u32;
-pub type TypeIndex = u32;
-pub type FunctionIndex = u32;
-pub type DataSegmentIndex = u32;
-pub type MemoryIndex = u32;
-
-#[derive(Clone)]
 pub struct Global {
     index: u32,
     export: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Local(pub u32);
-
-impl Local {
-    pub fn index(&self) -> u32 {
-        self.0
-    }
-}
-
-impl From<Local> for u32 {
-    fn from(value: Local) -> Self {
-        value.0
-    }
-}
-
-impl From<u32> for Local {
-    fn from(value: u32) -> Self {
-        Local(value)
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct TypeList<T> {
-    next: u32,
-    _t: std::marker::PhantomData<T>,
-    pub items: std::collections::BTreeMap<u32, ValType>,
-}
-
-impl<T: From<u32>, U: IntoIterator<Item = ValType>> From<U> for TypeList<T> {
-    fn from(value: U) -> Self {
-        let mut dest = Self::new();
-        for x in value.into_iter() {
-            dest.add(x);
-        }
-        dest
-    }
-}
-
-impl<T: From<u32>> Default for TypeList<T> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl<T: From<u32>> TypeList<T> {
-    pub fn new() -> Self {
-        Self {
-            next: 0,
-            _t: Default::default(),
-            items: Default::default(),
-        }
-    }
-
-    pub fn add(&mut self, ty: ValType) -> T {
-        let n = self.next;
-        self.items.insert(n, ty);
-        self.next += 1;
-        T::from(n)
-    }
-
-    pub fn ty(&self, local: Local) -> Option<ValType> {
-        self.items.get(&local.0).copied()
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Param(pub u32);
-
-impl Param {
-    pub fn index(&self) -> u32 {
-        self.0
-    }
-}
-
-impl From<Param> for u32 {
-    fn from(value: Param) -> Self {
-        value.0
-    }
-}
-
-impl From<u32> for Param {
-    fn from(value: u32) -> Self {
-        Param(value)
-    }
 }
 
 impl Global {
@@ -229,7 +137,7 @@ impl<'a> Module<'a> {
         let results = results.into_iter().collect::<Vec<_>>();
         let type_index = self
             .types()
-            .add(|t| t.function(params.clone(), results.clone()));
+            .push(|t| t.function(params.clone(), results.clone()));
         self.funcs.function(type_index);
         let index = self.imports.len() + self.funcs.len() - 1;
         let f = Function {
@@ -319,31 +227,6 @@ impl<'a> Module<'a> {
         let bytes = self.finish();
         std::fs::write(path, bytes)?;
         Ok(())
-    }
-}
-
-impl<'a> Function<'a> {
-    pub fn push(&mut self, expr: impl Expr<'a>) -> &mut Self {
-        self.body.push(expr);
-        self
-    }
-
-    pub fn export(&mut self, name: impl Into<String>) -> &mut Self {
-        self.export = Some(name.into());
-        self
-    }
-
-    pub fn builder(&mut self) -> &mut Builder<'a> {
-        &mut self.body
-    }
-
-    pub fn with_builder(&mut self, f: impl Fn(&mut Builder)) -> &mut Self {
-        f(&mut self.body);
-        self
-    }
-
-    pub fn index(&self) -> FunctionIndex {
-        self.index
     }
 }
 

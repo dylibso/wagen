@@ -17,7 +17,7 @@ fn main() {
     module.data_segment(&ConstExpr::i32_const(dataidx), s);
 
     let mut locals = TypeList::new();
-    let a = locals.add(ValType::I64);
+    let a = locals.push(ValType::I64);
     module
         .func("hello", [], [ValType::I32], locals)
         .with_builder(|b| {
