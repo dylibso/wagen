@@ -21,8 +21,8 @@ fn main() -> anyhow::Result<()> {
         .export("add1")
         .index();
 
-    let mut params = Params::new();
-    let a = params.add("a", ValType::I32);
+    let mut params = TypeList::new();
+    let a = params.add(ValType::I32);
     module
         .func("add2", params, [ValType::I32], [])
         .push([

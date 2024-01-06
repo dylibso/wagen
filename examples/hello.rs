@@ -15,15 +15,18 @@ fn main() {
     let s = "Hello, world!";
     let len = s.len();
     module.data_segment(&ConstExpr::i32_const(dataidx), s);
+
+    let mut locals = TypeList::new();
+    let a = locals.add(ValType::I64);
     module
-        .func("hello", [], [ValType::I32], [ValType::I64])
+        .func("hello", [], [ValType::I32], locals)
         .with_builder(|b| {
             b.push([
                 //
                 // Alloc
                 Instr::I64Const(len as i64),
                 Instr::Call(extism.alloc),
-                Instr::LocalTee(0),
+                Instr::LocalTee(a.into()),
                 //
                 // Load first half from memory and copy it to extism
                 Instr::I32Const(0),
@@ -35,7 +38,7 @@ fn main() {
                 Instr::Call(extism.store_u64),
                 //
                 // Load second half and copy it
-                Instr::LocalGet(0),
+                Instr::LocalGet(a.into()),
                 Instr::I64Const(8),
                 Instr::I64Add,
                 Instr::I32Const(0),
@@ -47,7 +50,7 @@ fn main() {
                 Instr::Call(extism.store_u64),
                 //
                 // Set output
-                Instr::LocalGet(0),
+                Instr::LocalGet(a.into()),
                 Instr::I64Const(len as i64),
                 Instr::Call(extism.output_set),
                 Instr::I32Const(0),

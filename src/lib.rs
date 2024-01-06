@@ -80,40 +80,53 @@ impl From<Local> for u32 {
     }
 }
 
-#[derive(Clone, Default, Debug)]
-pub struct Locals {
-    next: u32,
-    map: std::collections::BTreeMap<u32, (String, ValType)>,
+impl From<u32> for Local {
+    fn from(value: u32) -> Self {
+        Local(value)
+    }
 }
 
-impl<T: IntoIterator<Item = ValType>> From<T> for Locals {
-    fn from(value: T) -> Self {
-        let mut dest = Locals::new();
+#[derive(Clone, Debug)]
+pub struct TypeList<T> {
+    next: u32,
+    _t: std::marker::PhantomData<T>,
+    pub items: std::collections::BTreeMap<u32, ValType>,
+}
+
+impl<T: From<u32>, U: IntoIterator<Item = ValType>> From<U> for TypeList<T> {
+    fn from(value: U) -> Self {
+        let mut dest = Self::new();
         for x in value.into_iter() {
-            dest.add("", x);
+            dest.add(x);
         }
         dest
     }
 }
 
-impl Locals {
+impl<T: From<u32>> Default for TypeList<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T: From<u32>> TypeList<T> {
     pub fn new() -> Self {
-        Self::default()
+        Self {
+            next: 0,
+            _t: Default::default(),
+            items: Default::default(),
+        }
     }
 
-    pub fn add(&mut self, name: impl Into<String>, ty: ValType) -> Local {
+    pub fn add(&mut self, ty: ValType) -> T {
         let n = self.next;
-        self.map.insert(n, (name.into(), ty));
+        self.items.insert(n, ty);
         self.next += 1;
-        Local(n)
-    }
-
-    pub fn name(&self, local: Local) -> Option<&str> {
-        self.map.get(&local.0).map(|x| x.0.as_str())
+        T::from(n)
     }
 
     pub fn ty(&self, local: Local) -> Option<ValType> {
-        self.map.get(&local.0).map(|x| x.1)
+        self.items.get(&local.0).copied()
     }
 }
 
@@ -132,40 +145,9 @@ impl From<Param> for u32 {
     }
 }
 
-#[derive(Clone, Default, Debug)]
-pub struct Params {
-    next: u32,
-    map: std::collections::BTreeMap<u32, (String, ValType)>,
-}
-
-impl<T: IntoIterator<Item = ValType>> From<T> for Params {
-    fn from(value: T) -> Self {
-        let mut dest = Params::new();
-        for x in value.into_iter() {
-            dest.add("", x);
-        }
-        dest
-    }
-}
-
-impl Params {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn add(&mut self, name: impl Into<String>, ty: ValType) -> Local {
-        let n = self.next;
-        self.map.insert(n, (name.into(), ty));
-        self.next += 1;
-        Local(n)
-    }
-
-    pub fn name(&self, local: Local) -> Option<&str> {
-        self.map.get(&local.0).map(|x| x.0.as_str())
-    }
-
-    pub fn ty(&self, local: Local) -> Option<ValType> {
-        self.map.get(&local.0).map(|x| x.1)
+impl From<u32> for Param {
+    fn from(value: u32) -> Self {
+        Param(value)
     }
 }
 
@@ -239,16 +221,11 @@ impl<'a> Module<'a> {
     pub fn func(
         &mut self,
         name: impl AsRef<str>,
-        params: impl Into<Params>,
+        params: impl Into<TypeList<Param>>,
         results: impl IntoIterator<Item = ValType>,
-        locals: impl Into<Locals>,
+        locals: impl Into<TypeList<Local>>,
     ) -> &mut Function<'a> {
-        let params = params
-            .into()
-            .map
-            .into_values()
-            .map(|x| x.1)
-            .collect::<Vec<_>>();
+        let params = params.into().items.into_values().collect::<Vec<_>>();
         let results = results.into_iter().collect::<Vec<_>>();
         let type_index = self
             .types()
@@ -258,7 +235,7 @@ impl<'a> Module<'a> {
         let f = Function {
             body: Builder::default(),
             name: name.as_ref().to_string(),
-            locals: locals.into().map.into_values().map(|x| x.1).collect(),
+            locals: locals.into().items.into_values().collect(),
             type_index,
             index,
             export: None,
