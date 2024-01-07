@@ -25,7 +25,7 @@ impl<'a> Function<'a> {
         &mut self.body
     }
 
-    pub fn with_builder(&mut self, f: impl Fn(&mut Builder)) -> &mut Self {
+    pub fn with_builder(&mut self, f: impl FnOnce(&mut Builder)) -> &mut Self {
         f(&mut self.body);
         self
     }
