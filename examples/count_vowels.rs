@@ -28,49 +28,36 @@ fn main() {
         .func("is_vowel", [ValType::I32], [ValType::I32], [])
         .push(is_vowel)
         .index();
-
+    let mut locals = TypeList::<Local>::new();
+    let index = locals.push(ValType::I64);
+    let count = locals.push(ValType::I32);
+    let pointer = locals.push(ValType::I64);
     module
-        .func(
-            "count_vowels",
-            [],
-            [ValType::I32],
-            [ValType::I64, ValType::I32, ValType::I64],
-        )
+        .func("count_vowels", [], [ValType::I32], locals)
         .with_builder(|b| {
-            let index = 0;
-            let count = 1;
-            let pointer = 2;
-            b.r#loop(BlockType::Empty, |b| {
-                b.push([
-                    // Load current index
-                    Instr::LocalGet(index),
-                    Instr::Call(extism.input_load_u8),
-                    // Check if the result is a vowel and store it in `1`
-                    Instr::Call(is_vowel),
-                    Instr::LocalGet(count),
-                    Instr::I32Add,
-                    Instr::LocalSet(count),
-                ])
-                .local_incr(0, ValType::I64, true)
-                .push([
-                    // Check index variable
-                    Instr::Call(extism.input_length),
-                    Instr::I64LeU,
-                    Instr::BrIf(0),
-                ]);
+            b.loop_(BlockType::Empty, |b: &mut Builder| {
+                b.push(index)
+                    .push(extism.input_load_u8)
+                    .push(is_vowel)
+                    .push(count)
+                    .push(Instr::I32Add)
+                    .push(count.set())
+                    .local_incr(index, ValType::I64)
+                    .push(index)
+                    .push(extism.input_length)
+                    .push([Instr::I64LeU, Instr::BrIf(0)]);
             })
-            .push([
-                Instr::I64Const(std::mem::size_of::<u64>() as i64),
-                Instr::Call(extism.alloc),
-                Instr::LocalTee(pointer),
-                Instr::LocalGet(count),
-                Instr::I64ExtendI32U,
-                Instr::Call(extism.store_u64),
-                Instr::LocalGet(pointer),
-                Instr::I64Const(std::mem::size_of::<u64>() as i64),
-                Instr::Call(extism.output_set),
-                Instr::I32Const(0),
-            ]);
+            .push(std::mem::size_of::<u64>() as i64)
+            .push(extism.alloc)
+            .push(Instr::LocalTee(pointer.into()))
+            .push(count)
+            .push(Instr::I64ExtendI32U)
+            .push(extism.store_u64)
+            .push(pointer)
+            .push(std::mem::size_of::<u64>() as i64)
+            .push(extism.output_set)
+            .push(0i32)
+            .return_()
         })
         .export("count_vowels");
 

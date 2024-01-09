@@ -4,7 +4,7 @@ pub trait Expr<'a> {
     fn expr(self, builder: &mut Builder<'a>);
 }
 
-impl<'a, F: Fn(&mut Builder<'a>)> Expr<'a> for F {
+impl<'a, F: FnOnce(&mut Builder<'a>)> Expr<'a> for F {
     fn expr(self, builder: &mut Builder<'a>) {
         self(builder)
     }
@@ -16,13 +16,13 @@ impl<'a> Expr<'a> for Vec<Instr<'a>> {
     }
 }
 
-impl<'a> Expr<'a> for &[Instr<'a>] {
+impl<'a, const N: usize> Expr<'a> for [Instr<'a>; N] {
     fn expr(self, builder: &mut Builder<'a>) {
-        builder.extend(self.to_vec());
+        builder.extend(self);
     }
 }
 
-impl<'a, const N: usize> Expr<'a> for [Instr<'a>; N] {
+impl<'a> Expr<'a> for &[Instr<'a>] {
     fn expr(self, builder: &mut Builder<'a>) {
         builder.extend(self.to_vec());
     }

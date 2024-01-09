@@ -1,6 +1,6 @@
 use crate::*;
 
-#[derive(Default, Clone)]
+#[derive(Default, Debug, Clone)]
 pub struct Builder<'a> {
     pub instrs: Vec<Instr<'a>>,
 }
@@ -28,8 +28,8 @@ impl<'a> Builder<'a> {
         self
     }
 
-    pub fn local_incr(&mut self, index: u32, ty: ValType, tee: bool) -> &mut Self {
-        self.push(Instr::LocalGet(index));
+    pub fn local_incr(&mut self, local: Local, ty: ValType) -> &mut Self {
+        self.push(Instr::LocalGet(local.0));
         match ty {
             ValType::I64 => {
                 self.push([Instr::I64Const(1), Instr::I64Add]);
@@ -45,28 +45,36 @@ impl<'a> Builder<'a> {
             }
             x => panic!("Invalid type in `local_incr`: {x:?}"),
         }
-
-        if tee {
-            self.push(Instr::LocalTee(index));
-        } else {
-            self.push(Instr::LocalSet(index));
-        }
+        self.push(Instr::LocalSet(local.0));
         self
     }
 
-    pub fn block<F: Fn(&mut Self)>(&mut self, bt: BlockType, expr: F) -> &mut Self {
+    pub fn block<F: Expr<'a>>(&mut self, bt: BlockType, expr: F) -> &mut Self {
         self.push(Instr::Block(bt));
-        expr(self);
+        self.push(expr);
         self.push(Instr::End)
     }
 
-    pub fn r#loop<F: Fn(&mut Self)>(&mut self, bt: BlockType, expr: F) -> &mut Self {
+    pub fn loop_<F: Expr<'a>>(&mut self, bt: BlockType, expr: F) -> &mut Self {
         self.push(Instr::Loop(bt));
-        expr(self);
+        self.push(expr);
         self.push(Instr::End)
     }
 
-    pub fn if_then<F: Fn(&mut Self)>(
+    pub fn loop_while<C: Expr<'a>, F: Expr<'a>>(
+        &mut self,
+        bt: BlockType,
+        cond: C,
+        expr: F,
+    ) -> &mut Self {
+        self.push(Instr::Loop(bt));
+        self.push(cond);
+        self.push(expr);
+        self.push(Instr::BrIf(0));
+        self.push(Instr::End)
+    }
+
+    pub fn if_then<F: Expr<'a>>(
         &mut self,
         bt: BlockType,
         cond: impl Expr<'a>,
@@ -74,11 +82,11 @@ impl<'a> Builder<'a> {
     ) -> &mut Self {
         self.push(cond);
         self.push(Instr::If(bt));
-        expr(self);
+        self.push(expr);
         self.push(Instr::End)
     }
 
-    pub fn if_then_else<F: Fn(&mut Self), G: Fn(&mut Self)>(
+    pub fn if_then_else<F: Expr<'a>, G: Expr<'a>>(
         &mut self,
         bt: BlockType,
         cond: impl Expr<'a>,
@@ -87,9 +95,13 @@ impl<'a> Builder<'a> {
     ) -> &mut Self {
         self.push(cond);
         self.push(Instr::If(bt));
-        expr(self);
+        self.push(expr);
         self.push(Instr::Else);
-        else_(self);
+        self.push(else_);
         self.push(Instr::End)
+    }
+
+    pub fn return_(&mut self) {
+        self.push(Instr::Return);
     }
 }

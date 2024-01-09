@@ -1,12 +1,12 @@
 use crate::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Function<'a> {
     pub name: String,
     pub body: Builder<'a>,
     pub locals: Vec<ValType>,
-    pub type_index: TypeIndex,
-    pub index: FunctionIndex,
+    pub type_index: FunctionTypeIndex,
+    pub index: u32,
     pub export: Option<String>,
 }
 
@@ -31,6 +31,6 @@ impl<'a> Function<'a> {
     }
 
     pub fn index(&self) -> FunctionIndex {
-        self.index
+        FunctionIndex::from(self.index)
     }
 }

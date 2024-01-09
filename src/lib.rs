@@ -1,12 +1,14 @@
 mod builder;
 mod expr;
 mod function;
+mod index;
 pub mod link;
 mod type_list;
 
 pub use builder::Builder;
 pub use expr::Expr;
 pub use function::Function;
+pub use index::{FunctionIndex, Index};
 pub use type_list::{Local, Param, TypeList};
 
 pub use wasm_encoder::{
@@ -16,11 +18,110 @@ pub use wasm_encoder::{
 
 pub use wasmparser as parser;
 
-pub type GlobalIndex = u32;
-pub type TypeIndex = u32;
-pub type FunctionIndex = u32;
-pub type DataSegmentIndex = u32;
-pub type MemoryIndex = u32;
+handle!(GlobalHandle);
+pub type GlobalIndex = Index<GlobalHandle>;
+
+handle!(DataSegmentHandle);
+pub type DataSegmentIndex = Index<GlobalHandle>;
+
+handle!(MemoryHandle);
+pub type MemoryIndex = Index<MemoryHandle>;
+
+handle!(FunctionTypeHandle);
+pub type FunctionTypeIndex = Index<FunctionTypeHandle>;
+
+impl FunctionTypeIndex {
+    pub fn ref_type(self, nullable: bool) -> RefType {
+        RefType {
+            nullable,
+            heap_type: HeapType::Concrete(self.index()),
+        }
+    }
+
+    pub fn val_type(self, nullable: bool) -> ValType {
+        ValType::Ref(self.ref_type(nullable))
+    }
+}
+
+handle!(ArrayTypeHandle);
+pub type ArrayTypeIndex = Index<ArrayTypeHandle>;
+
+impl ArrayTypeIndex {
+    pub fn ref_type(self, nullable: bool) -> RefType {
+        RefType {
+            nullable,
+            heap_type: HeapType::Concrete(self.index()),
+        }
+    }
+
+    pub fn val_type(self, nullable: bool) -> ValType {
+        ValType::Ref(self.ref_type(nullable))
+    }
+
+    pub fn array_new<'a>(&self) -> impl Expr<'a> {
+        Instr::ArrayNew(self.index())
+    }
+
+    pub fn array_new_default<'a>(&self) -> impl Expr<'a> {
+        Instr::ArrayNewDefault(self.index())
+    }
+
+    pub fn array_get<'a>(&self) -> impl Expr<'a> {
+        Instr::ArrayGet(self.index())
+    }
+
+    pub fn array_get_s<'a>(&self) -> impl Expr<'a> {
+        Instr::ArrayGetS(self.index())
+    }
+
+    pub fn array_get_u<'a>(&self) -> impl Expr<'a> {
+        Instr::ArrayGetU(self.index())
+    }
+
+    pub fn array_set<'a>(&self) -> impl Expr<'a> {
+        Instr::ArraySet(self.index())
+    }
+}
+
+handle!(StructTypeHandle);
+pub type StructTypeIndex = Index<StructTypeHandle>;
+
+impl StructTypeIndex {
+    pub fn ref_type(self, nullable: bool) -> RefType {
+        RefType {
+            nullable,
+            heap_type: HeapType::Concrete(self.index()),
+        }
+    }
+
+    pub fn val_type(self, nullable: bool) -> ValType {
+        ValType::Ref(self.ref_type(nullable))
+    }
+
+    pub fn struct_new<'a>(&self) -> impl Expr<'a> {
+        Instr::StructNew(self.index())
+    }
+
+    pub fn struct_new_default<'a>(&self) -> impl Expr<'a> {
+        Instr::StructNewDefault(self.index())
+    }
+
+    pub fn struct_get<'a>(&self, field: u32) -> impl Expr<'a> {
+        Instr::StructGet(self.index(), field)
+    }
+
+    pub fn struct_get_s<'a>(&self, field: u32) -> impl Expr<'a> {
+        Instr::StructGetS(self.index(), field)
+    }
+
+    pub fn struct_get_u<'a>(&self, field: u32) -> impl Expr<'a> {
+        Instr::StructGetU(self.index(), field)
+    }
+
+    pub fn struct_set<'a>(&self, field: u32) -> impl Expr<'a> {
+        Instr::StructSet(self.index(), field)
+    }
+}
 
 #[derive(Clone, Default)]
 pub struct Module<'a> {
@@ -47,16 +148,22 @@ impl<'a> Types<'a> {
     pub fn push<F: FnOnce(&mut wasm_encoder::TypeSection) -> &mut wasm_encoder::TypeSection>(
         &mut self,
         f: F,
-    ) -> TypeIndex {
+    ) -> u32 {
         f(&mut self.0);
         self.0.len() - 1
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Global {
     index: u32,
     export: Option<String>,
+}
+
+impl<'a> Expr<'a> for Global {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::GlobalGet(self.index));
+    }
 }
 
 impl Global {
@@ -66,8 +173,31 @@ impl Global {
     }
 
     pub fn index(&self) -> GlobalIndex {
-        self.index
+        GlobalIndex::from(self.index)
     }
+
+    pub fn set<'a>(&self) -> impl Expr<'a> {
+        Instr::GlobalSet(self.index)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct StructType {
+    pub fields: Vec<FieldType>,
+}
+
+impl<T: IntoIterator<Item = FieldType>> From<T> for StructType {
+    fn from(value: T) -> Self {
+        StructType {
+            fields: value.into_iter().collect(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct ArrayType {
+    pub item: StorageType,
+    pub mutable: bool,
 }
 
 impl<'a> Module<'a> {
@@ -118,7 +248,7 @@ impl<'a> Module<'a> {
         let idx = self.imports.len() - 1;
         self.import_info
             .push((func_name.unwrap_or(name.as_ref()).to_string(), idx));
-        idx
+        FunctionIndex::from(idx)
     }
 
     pub fn start(&mut self, f: FunctionIndex) -> &mut Self {
@@ -138,18 +268,26 @@ impl<'a> Module<'a> {
         let type_index = self
             .types()
             .push(|t| t.function(params.clone(), results.clone()));
-        self.funcs.function(type_index);
+        self.funcs.function(type_index.into());
         let index = self.imports.len() + self.funcs.len() - 1;
         let f = Function {
             body: Builder::default(),
             name: name.as_ref().to_string(),
             locals: locals.into().items.into_values().collect(),
-            type_index,
+            type_index: FunctionTypeIndex::from(type_index),
             index,
             export: None,
         };
         self.defs.push(f);
         self.defs.last_mut().unwrap()
+    }
+
+    pub fn struct_type(&mut self, def: impl Into<StructType>) -> StructTypeIndex {
+        StructTypeIndex::from(self.types().push(|t| t.struct_(def.into().fields.clone())))
+    }
+
+    pub fn array_type(&mut self, def: &StructType) -> ArrayTypeIndex {
+        ArrayTypeIndex::from(self.types().push(|t| t.struct_(def.fields.clone())))
     }
 
     pub fn types<'b>(&'b mut self) -> Types<'b> {
@@ -197,7 +335,7 @@ impl<'a> Module<'a> {
 
         if let Some(start) = self.start {
             module.section(&wasm_encoder::StartSection {
-                function_index: start,
+                function_index: start.0,
             });
         }
 
@@ -215,12 +353,12 @@ impl<'a> Module<'a> {
 
     pub fn data_segment(&mut self, offset: &ConstExpr, data: impl AsRef<[u8]>) -> DataSegmentIndex {
         self.data.active(0, offset, data.as_ref().to_vec());
-        self.data.len() - 1
+        DataSegmentIndex::from(self.data.len() - 1)
     }
 
     pub fn memory(&mut self, mt: MemoryType) -> MemoryIndex {
         self.memory.memory(mt);
-        self.memory.len() - 1
+        MemoryIndex::from(self.memory.len() - 1)
     }
 
     pub fn save(self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
@@ -228,6 +366,26 @@ impl<'a> Module<'a> {
         std::fs::write(path, bytes)?;
         Ok(())
     }
+
+    pub fn validate(self) -> anyhow::Result<Vec<u8>> {
+        let bytes = self.finish();
+        validate(&bytes)?;
+        Ok(bytes)
+    }
+
+    pub fn validate_save(self, path: impl AsRef<std::path::Path>) -> anyhow::Result<()> {
+        let bytes = self.finish();
+        validate(&bytes)?;
+        std::fs::write(path, bytes)?;
+        Ok(())
+    }
+}
+
+pub fn validate(
+    data: impl AsRef<[u8]>,
+) -> Result<wasmparser::types::Types, wasmparser::BinaryReaderError> {
+    wasmparser::Validator::new_with_features(wasmparser::WasmFeatures::all())
+        .validate_all(data.as_ref())
 }
 
 #[cfg(feature = "extism")]
@@ -261,5 +419,78 @@ impl<'a> Module<'a> {
         let mut store = wasmtime::Store::new(&engine, ());
         let instance = linker.instantiate(&mut store, &module)?;
         Ok((store, instance))
+    }
+}
+
+impl<'a> Expr<'a> for i32 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::I32Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for i64 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::I64Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for f32 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::F32Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for f64 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::F64Const(self));
+    }
+}
+
+pub fn any_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::Any,
+    })
+}
+
+pub fn none_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::None,
+    })
+}
+
+pub fn i31_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::I31,
+    })
+}
+
+pub fn eq_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::Eq,
+    })
+}
+
+pub fn func_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::Func,
+    })
+}
+
+pub fn extern_type(nullable: bool) -> ValType {
+    ValType::Ref(RefType {
+        nullable,
+        heap_type: HeapType::Extern,
+    })
+}
+
+pub fn field_type(storage: StorageType, mutable: bool) -> FieldType {
+    FieldType {
+        element_type: storage,
+        mutable,
     }
 }

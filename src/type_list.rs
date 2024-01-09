@@ -3,8 +3,8 @@ use crate::*;
 #[derive(Clone, Debug)]
 pub struct TypeList<T> {
     next: u32,
-    _t: std::marker::PhantomData<T>,
     pub items: std::collections::BTreeMap<u32, ValType>,
+    _t: std::marker::PhantomData<T>,
 }
 
 impl<T: From<u32>, U: IntoIterator<Item = ValType>> From<U> for TypeList<T> {
@@ -44,44 +44,30 @@ impl<T: From<u32>> TypeList<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Local(pub u32);
+handle!(LocalHandle);
+pub type Local = Index<LocalHandle>;
 
 impl Local {
-    pub fn index(&self) -> u32 {
-        self.0
+    pub fn set<'a>(&self) -> impl Expr<'a> {
+        Instr::LocalSet(self.0)
+    }
+
+    pub fn tee<'a>(&self) -> impl Expr<'a> {
+        Instr::LocalTee(self.0)
     }
 }
 
-impl From<Local> for u32 {
-    fn from(value: Local) -> Self {
-        value.0
+impl<'a> Expr<'a> for Local {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::LocalGet(self.0));
     }
 }
 
-impl From<u32> for Local {
-    fn from(value: u32) -> Self {
-        Local(value)
-    }
-}
+handle!(ParamHandle);
+pub type Param = Index<ParamHandle>;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Eq, Ord)]
-pub struct Param(pub u32);
-
-impl Param {
-    pub fn index(&self) -> u32 {
-        self.0
-    }
-}
-
-impl From<Param> for u32 {
-    fn from(value: Param) -> Self {
-        value.0
-    }
-}
-
-impl From<u32> for Param {
-    fn from(value: u32) -> Self {
-        Param(value)
+impl<'a> Expr<'a> for Param {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::LocalGet(self.0));
     }
 }

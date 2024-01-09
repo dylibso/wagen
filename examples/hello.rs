@@ -11,7 +11,7 @@ fn main() {
         shared: false,
     });
 
-    let dataidx = 0x1;
+    let dataidx = 0x13;
     let s = "Hello, world!";
     let len = s.len();
     module.data_segment(&ConstExpr::i32_const(dataidx), s);
@@ -21,40 +21,31 @@ fn main() {
     module
         .func("hello", [], [ValType::I32], locals)
         .with_builder(|b| {
-            b.push([
-                //
-                // Alloc
-                Instr::I64Const(len as i64),
-                Instr::Call(extism.alloc),
-                Instr::LocalTee(a.into()),
-                //
-                // Load first half from memory and copy it to extism
-                Instr::I32Const(0),
-                Instr::I64Load(MemArg {
-                    offset: 0x1,
+            b.push(len as i64)
+                .push(extism.alloc)
+                .push(a.tee())
+                .push(0i32)
+                .push(Instr::I64Load(MemArg {
+                    offset: dataidx as u64,
                     align: 1,
                     memory_index: 0,
-                }),
-                Instr::Call(extism.store_u64),
-                //
-                // Load second half and copy it
-                Instr::LocalGet(a.into()),
-                Instr::I64Const(8),
-                Instr::I64Add,
-                Instr::I32Const(0),
-                Instr::I64Load(MemArg {
-                    offset: 0x9,
+                }))
+                .push(extism.store_u64)
+                .push(a)
+                .push(8i64)
+                .push(Instr::I64Add)
+                .push(0i32)
+                .push(Instr::I64Load(MemArg {
+                    offset: dataidx as u64 + 8,
                     align: 1,
                     memory_index: 0,
-                }),
-                Instr::Call(extism.store_u64),
-                //
-                // Set output
-                Instr::LocalGet(a.into()),
-                Instr::I64Const(len as i64),
-                Instr::Call(extism.output_set),
-                Instr::I32Const(0),
-            ]);
+                }))
+                .push(extism.store_u64)
+                .push(a)
+                .push(len as i64)
+                .push(extism.output_set)
+                .push(0i32)
+                .return_()
         })
         .export("hello");
 
