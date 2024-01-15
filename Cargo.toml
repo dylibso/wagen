@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.71"
-wasm-encoder = {version = "0.38.0", features = ["wasmparser"]}
+wasm-encoder = {version = "0.39.0", features = ["wasmparser"]}
 wasmparser = {version = "0.119.0"}
 extism-manifest = {git = "https://github.com/extism/extism", optional = true}
 extism = {git = "https://github.com/extism/extism", optional = true}
