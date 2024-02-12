@@ -32,19 +32,37 @@ impl<'a> Expr<'a> for Add {
             // Set a field
             Instr::LocalGet(0),
             Instr::LocalGet(0),
-            Instr::StructGet(self.0.index(), 0),
+            Instr::StructGet {
+                struct_type_index: self.0.index(),
+                field_index: 0,
+            },
             Instr::LocalGet(1),
-            Instr::StructGet(self.0.index(), 0),
+            Instr::StructGet {
+                struct_type_index: self.0.index(),
+                field_index: 0,
+            },
             Instr::I32Add,
-            Instr::StructSet(self.0.index(), 0),
+            Instr::StructSet {
+                struct_type_index: self.0.index(),
+                field_index: 0,
+            },
             // Set b field
             Instr::LocalGet(0),
             Instr::LocalGet(0),
-            Instr::StructGet(self.0.index(), 1),
+            Instr::StructGet {
+                struct_type_index: self.0.index(),
+                field_index: 1,
+            },
             Instr::LocalGet(1),
-            Instr::StructGet(self.0.index(), 1),
+            Instr::StructGet {
+                struct_type_index: self.0.index(),
+                field_index: 1,
+            },
             Instr::I32Add,
-            Instr::StructSet(self.0.index(), 1),
+            Instr::StructSet {
+                struct_type_index: self.0.index(),
+                field_index: 1,
+            },
             Instr::Return,
         ]);
     }
