@@ -39,3 +39,33 @@ impl<'a> Expr<'a> for Builder<'a> {
         builder.extend(self.instrs);
     }
 }
+
+impl<'a> Expr<'a> for bool {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::I32Const(self as i32));
+    }
+}
+
+impl<'a> Expr<'a> for i32 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::I32Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for i64 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::I64Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for f32 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::F32Const(self));
+    }
+}
+
+impl<'a> Expr<'a> for f64 {
+    fn expr(self, builder: &mut Builder<'a>) {
+        builder.push(Instr::F64Const(self));
+    }
+}

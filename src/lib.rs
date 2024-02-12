@@ -107,19 +107,31 @@ impl StructTypeIndex {
     }
 
     pub fn struct_get<'a>(&self, field: u32) -> impl Expr<'a> {
-        Instr::StructGet(self.index(), field)
+        Instr::StructGet {
+            struct_type_index: self.index(),
+            field_index: field,
+        }
     }
 
     pub fn struct_get_s<'a>(&self, field: u32) -> impl Expr<'a> {
-        Instr::StructGetS(self.index(), field)
+        Instr::StructGetS {
+            struct_type_index: self.index(),
+            field_index: field,
+        }
     }
 
     pub fn struct_get_u<'a>(&self, field: u32) -> impl Expr<'a> {
-        Instr::StructGetU(self.index(), field)
+        Instr::StructGetU {
+            struct_type_index: self.index(),
+            field_index: field,
+        }
     }
 
     pub fn struct_set<'a>(&self, field: u32) -> impl Expr<'a> {
-        Instr::StructSet(self.index(), field)
+        Instr::StructSet {
+            struct_type_index: self.index(),
+            field_index: field,
+        }
     }
 }
 
@@ -419,30 +431,6 @@ impl<'a> Module<'a> {
         let mut store = wasmtime::Store::new(&engine, ());
         let instance = linker.instantiate(&mut store, &module)?;
         Ok((store, instance))
-    }
-}
-
-impl<'a> Expr<'a> for i32 {
-    fn expr(self, builder: &mut Builder<'a>) {
-        builder.push(Instr::I32Const(self));
-    }
-}
-
-impl<'a> Expr<'a> for i64 {
-    fn expr(self, builder: &mut Builder<'a>) {
-        builder.push(Instr::I64Const(self));
-    }
-}
-
-impl<'a> Expr<'a> for f32 {
-    fn expr(self, builder: &mut Builder<'a>) {
-        builder.push(Instr::F32Const(self));
-    }
-}
-
-impl<'a> Expr<'a> for f64 {
-    fn expr(self, builder: &mut Builder<'a>) {
-        builder.push(Instr::F64Const(self));
     }
 }
 
