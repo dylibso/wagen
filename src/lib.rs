@@ -12,8 +12,9 @@ pub use index::{FunctionIndex, Index};
 pub use type_list::{Local, Param, TypeList};
 
 pub use wasm_encoder::{
-    self as encoder, BlockType, ConstExpr, FieldType, HeapType, Instruction as Instr, MemArg,
-    MemoryType, RefType, StorageType, ValType,
+    self as encoder, BlockType, ConstExpr, ElementMode, ElementSection, ElementSegment, Elements,
+    FieldType, HeapType, Instruction as Instr, MemArg, MemoryType, RefType, StorageType, TableType,
+    ValType,
 };
 
 pub use wasmparser as parser;
@@ -152,6 +153,8 @@ pub struct Module<'a> {
     global_defs: Vec<Global>,
     start: Option<FunctionIndex>,
     imports: wasm_encoder::ImportSection,
+    tables: wasm_encoder::TableSection,
+    elements: wasm_encoder::ElementSection,
 }
 
 pub struct Types<'a>(pub &'a mut wasm_encoder::TypeSection);
@@ -162,6 +165,15 @@ impl<'a> Types<'a> {
         f: F,
     ) -> u32 {
         f(&mut self.0);
+        self.0.len() - 1
+    }
+}
+
+pub struct Tables<'a>(pub &'a mut wasm_encoder::TableSection);
+
+impl<'a> Tables<'a> {
+    pub fn push(&mut self, ty: TableType) -> u32 {
+        self.0.table(ty);
         self.0.len() - 1
     }
 }
@@ -306,6 +318,27 @@ impl<'a> Module<'a> {
         Types(&mut self.types)
     }
 
+    pub fn tables<'b>(&'b mut self) -> Tables<'b> {
+        Tables(&mut self.tables)
+    }
+
+    pub fn active_element(
+        &mut self,
+        table_index: Option<u32>,
+        elements: Elements,
+    ) -> &mut ElementSection {
+        self.elements
+            .active(table_index, &ConstExpr::i32_const(0), elements)
+    }
+
+    pub fn passive_element(&mut self, elements: Elements) -> &mut ElementSection {
+        self.elements.passive(elements)
+    }
+
+    pub fn element_segment(&mut self, seg: ElementSegment) -> &mut ElementSection {
+        self.elements.segment(seg)
+    }
+
     pub fn finish(mut self) -> Vec<u8> {
         let mut module = wasm_encoder::Module::new();
         for i in self.import_info {
@@ -335,12 +368,11 @@ impl<'a> Module<'a> {
             }
         }
 
-        let table = wasm_encoder::TableSection::new();
-
         module.section(&self.types);
         module.section(&self.imports);
         module.section(&self.funcs);
-        module.section(&table);
+        module.section(&self.tables);
+        module.section(&self.elements);
         module.section(&self.memory);
         module.section(&self.globals);
         module.section(&self.exports);
