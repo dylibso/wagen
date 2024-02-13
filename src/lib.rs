@@ -372,7 +372,6 @@ impl<'a> Module<'a> {
         module.section(&self.imports);
         module.section(&self.funcs);
         module.section(&self.tables);
-        module.section(&self.elements);
         module.section(&self.memory);
         module.section(&self.globals);
         module.section(&self.exports);
@@ -383,6 +382,7 @@ impl<'a> Module<'a> {
             });
         }
 
+        module.section(&self.elements);
         module.section(&self.code);
         module.section(&self.data);
 
