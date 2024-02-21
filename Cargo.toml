@@ -2,6 +2,7 @@
 name = "wagen"
 version = "0.1.0"
 edition = "2021"
+repository = "https://github.com/dylibso/wagen"
 
 [dependencies]
 anyhow = "1.0.71"
