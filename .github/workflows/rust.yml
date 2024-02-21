@@ -18,6 +18,8 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build
       run: cargo build --verbose --features extism,wasmtime
+    - name: Test
+      run: cargo test
     - name: Build examples
       run: cargo build --examples --features extism,wasmtime
     - run: cargo run --example add1 --features extism,wasmtime 10

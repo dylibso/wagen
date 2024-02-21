@@ -514,3 +514,47 @@ pub fn field_type(storage: StorageType, mutable: bool) -> FieldType {
         mutable,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn generate_valid_module() {
+        // From examples/add1.rs
+        struct Add1(Param);
+        impl<'a> Expr<'a> for Add1 {
+            fn expr(self, builder: &mut Builder<'a>) {
+                builder
+                    .push(self.0)
+                    .push(1i32)
+                    .push(Instr::I32Add)
+                    .return_()
+            }
+        }
+        let mut module = Module::new();
+        let mut params = TypeList::new();
+        let a = params.push(ValType::I32);
+        let add1 = module
+            .func("add1", params, [ValType::I32], [])
+            .push(Add1(a))
+            .export("add1")
+            .index();
+        let mut params = TypeList::new();
+        let a = params.push(ValType::I32);
+        module
+            .func("add2", params, [ValType::I32], [])
+            .push(a)
+            .push(add1)
+            .push(add1)
+            .push(Instr::Return)
+            .export("add2");
+        assert!(module.validate().is_ok());
+    }
+
+    #[test]
+    fn generate_empty_module() {
+        let module = Module::new();
+        assert!(module.validate().is_ok());
+    }
+}
