@@ -3,6 +3,8 @@ name = "wagen"
 version = "0.1.0"
 edition = "2021"
 repository = "https://github.com/dylibso/wagen"
+license = "BSD-3-Clause"
+description = "A library to help generate WebAssembly"
 
 [dependencies]
 anyhow = "1.0.71"
