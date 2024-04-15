@@ -1,6 +1,6 @@
 [package]
 name = "wagen"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 repository = "https://github.com/dylibso/wagen"
 license = "BSD-3-Clause"
@@ -8,7 +8,7 @@ description = "A library to help generate WebAssembly"
 
 [dependencies]
 anyhow = "1.0.71"
-wasm-encoder = {version = "0.202.0", features = ["wasmparser"]}
+wasm-encoder = {version = "0.203.0", features = ["wasmparser"]}
 wasmparser = {version = "0.203.0"}
 extism-manifest = {version = "1", optional = true}
 extism = {version = "1", optional = true}

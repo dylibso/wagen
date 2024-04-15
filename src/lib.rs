@@ -234,10 +234,12 @@ impl<'a> Module<'a> {
         name: impl AsRef<str>,
         ty: ValType,
         mutable: bool,
+        shared: bool,
         init: &ConstExpr,
     ) -> &mut Global {
         self.globals.global(
             wasm_encoder::GlobalType {
+                shared,
                 val_type: ty,
                 mutable,
             },

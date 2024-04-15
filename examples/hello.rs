@@ -5,6 +5,7 @@ fn main() {
     let extism = module.link_extism();
 
     module.memory(MemoryType {
+        page_size_log2: None,
         minimum: 1,
         maximum: None,
         memory64: false,
