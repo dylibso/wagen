@@ -30,30 +30,30 @@ impl<'a> Expr<'a> for Add {
     fn expr(self, builder: &mut Builder<'a>) {
         builder.push([
             // Set a field
-            Instr::LocalGet(0),
-            Instr::LocalGet(0),
+            Instr::LocalGet(self.0.index()),
+            Instr::LocalGet(self.0.index()),
             Instr::StructGet {
-                struct_type_index: self.0.index(),
+                struct_type_index: self.2.index(),
                 field_index: 0,
             },
-            Instr::LocalGet(1),
+            Instr::LocalGet(self.1.index()),
             Instr::StructGet {
-                struct_type_index: self.0.index(),
+                struct_type_index: self.2.index(),
                 field_index: 0,
             },
             Instr::I32Add,
             Instr::StructSet {
-                struct_type_index: self.0.index(),
+                struct_type_index: self.2.index(),
                 field_index: 0,
             },
             // Set b field
-            Instr::LocalGet(0),
-            Instr::LocalGet(0),
+            Instr::LocalGet(self.0.index()),
+            Instr::LocalGet(self.0.index()),
             Instr::StructGet {
                 struct_type_index: self.0.index(),
                 field_index: 1,
             },
-            Instr::LocalGet(1),
+            Instr::LocalGet(self.1.index()),
             Instr::StructGet {
                 struct_type_index: self.0.index(),
                 field_index: 1,
