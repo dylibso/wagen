@@ -471,14 +471,20 @@ impl<'a> Module<'a> {
 pub fn any_type(nullable: bool) -> ValType {
     ValType::Ref(RefType {
         nullable,
-        heap_type: HeapType::Any,
+        heap_type: HeapType::Abstract {
+            shared: false,
+            ty: encoder::AbstractHeapType::Any,
+        },
     })
 }
 
 pub fn none_type(nullable: bool) -> ValType {
     ValType::Ref(RefType {
         nullable,
-        heap_type: HeapType::None,
+        heap_type: HeapType::Abstract {
+            shared: false,
+            ty: encoder::AbstractHeapType::None,
+        },
     })
 }
 
@@ -492,21 +498,30 @@ pub fn i31_type(nullable: bool) -> ValType {
 pub fn eq_type(nullable: bool) -> ValType {
     ValType::Ref(RefType {
         nullable,
-        heap_type: HeapType::Eq,
+        heap_type: HeapType::Abstract {
+            shared: false,
+            ty: encoder::AbstractHeapType::Eq,
+        },
     })
 }
 
 pub fn func_type(nullable: bool) -> ValType {
     ValType::Ref(RefType {
         nullable,
-        heap_type: HeapType::Func,
+        heap_type: HeapType::Abstract {
+            shared: false,
+            ty: encoder::AbstractHeapType::Func,
+        },
     })
 }
 
 pub fn extern_type(nullable: bool) -> ValType {
     ValType::Ref(RefType {
         nullable,
-        heap_type: HeapType::Extern,
+        heap_type: HeapType::Abstract {
+            shared: false,
+            ty: encoder::AbstractHeapType::Extern,
+        },
     })
 }
 
