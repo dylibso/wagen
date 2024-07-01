@@ -8,7 +8,7 @@ description = "A library to help generate WebAssembly"
 
 [dependencies]
 anyhow = "1.0.71"
-wasm-encoder = {version = "0.211.1", features = ["wasmparser"]}
+wasm-encoder = {version = "0.212.0", features = ["wasmparser"]}
 wasmparser = {version = "0.211.1"}
 extism-manifest = {version = "1", optional = true}
 extism = {version = "1", optional = true}
