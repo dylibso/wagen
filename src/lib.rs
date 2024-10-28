@@ -160,11 +160,8 @@ pub struct Module<'a> {
 pub struct Types<'a>(pub &'a mut wasm_encoder::TypeSection);
 
 impl<'a> Types<'a> {
-    pub fn push<F: FnOnce(&mut wasm_encoder::TypeSection) -> &mut wasm_encoder::TypeSection>(
-        &mut self,
-        f: F,
-    ) -> u32 {
-        f(&mut self.0);
+    pub fn push<F: FnOnce(wasm_encoder::CoreTypeEncoder)>(&mut self, f: F) -> u32 {
+        f(self.0.ty());
         self.0.len() - 1
     }
 }
@@ -264,7 +261,7 @@ impl<'a> Module<'a> {
     ) -> FunctionIndex {
         let params = params.into_iter().collect::<Vec<_>>();
         let results = results.into_iter().collect::<Vec<_>>();
-        self.types.function(params.clone(), results.clone());
+        self.types.ty().function(params.clone(), results.clone());
         let type_index = self.types.len() - 1;
         self.imports.import(
             module.as_ref(),
