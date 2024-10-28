@@ -12,7 +12,7 @@ wasm-encoder = {version = "0.216.0", features = ["wasmparser"]}
 wasmparser = {version = "0.219.1"}
 extism-manifest = {version = "1", optional = true}
 extism = {version = "1", optional = true}
-wasmtime = {version = ">= 16.0.0, < 25.0.0", optional = true}
+wasmtime = {version = ">= 16.0.0, < 27.0.0", optional = true}
 
 [features]
 default = []
